@@ -1,0 +1,7 @@
+.far {
+    display: none;
+}
+
+li:hover .far {
+    display: inline;
+}
