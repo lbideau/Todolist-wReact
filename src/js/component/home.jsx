@@ -5,37 +5,39 @@ import React, { useEffect, useState } from "react";
 import rigoImage from "../../img/rigo-baby.jpg";
 import { Task } from "./Task.jsx";
 //create your first component
-const url = "https://assets.breatheco.de/apis/fake/todos/user/";
+const url = "https://assets.breatheco.de/apis/fake/todos/user/01bideau";
 
 const Home = () => {
 	const [todoTask, setTask] = useState([]);
 	const [inputValue, setInputValue] = useState("");
-	const [userName, setUserName] = useState("");
 
 	useEffect(() => {
-		if (localStorage.getItem("userName") === null) {
-			alert("Create a new user to use this app");
-		} else {
-			const fetchUser = async () => {
-				const response = await fetch(
-					url + localStorage.getItem("userName")
-				);
-				if (response.ok) {
-					const body = await response.json();
-					setTask(body);
-					setUserName(localStorage.getItem("userName"));
-				} else if (response.status == 404) {
-					localStorage.removeItem("userName");
-					setUserName("");
-				}
-			};
-			fetchUser();
+		const fetchTask = async () => {
+			let response = await fetch(url);
+			if (response.ok) {
+				let body = await response.json();
+				setTask(body);
+			} else if (response.status == 404) {
+				createUser();
+			}
+		};
+		fetchTask();
+	}, []);
+
+	const createUser = async () => {
+		let response = await fetch(url, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify([])
+		});
+		if (response.ok) {
+			let getResponse = await fetch(url);
+			let body = await getResponse.json();
+			setTask(body);
 		}
-	}, [userName]);
+	};
 
 	const updateTask = async (pos, checked) => {
-		let _user = localStorage.getItem("userName");
-
 		let result = todoTask.map((task, index) => {
 			let newTask = { ...task };
 			if (index === pos) {
@@ -45,7 +47,7 @@ const Home = () => {
 			return newTask;
 		});
 
-		const response = await fetch(url + _user, {
+		const response = await fetch(url, {
 			method: "PUT",
 			body: JSON.stringify(result),
 			headers: {
@@ -53,86 +55,41 @@ const Home = () => {
 			}
 		});
 		if (response.ok) {
-			const getResponse = await fetch(url + _user);
+			const getResponse = await fetch(url);
 			const body = await getResponse.json();
 			setTask(body);
 		}
 	};
 
-	const deleteUser = async () => {
-		let _user = localStorage.getItem("userName");
-		const response = await fetch(url + _user, {
-			method: "DELETE"
-		});
-		if (response.ok) {
-			alert("User deleted");
-			const body = await response.json();
-			if (body.result.toString().includes("ok")) {
-				localStorage.removeItem("userName");
-				setUserName("");
-				setTask([]);
-			}
-		}
-	};
-	/* 	const deleteUser = async user => {
-		const response = await fetch(url + user, {
-			method: "DELETE"
-		});
-		if (response.ok) {
-			setUserName("");
-			localStorage.removeItem("userName");
-			setTask([]);
-		}
-	}; */
 	const deleteTask = async pos => {
-		let _user = localStorage.getItem("userName");
 		let result = todoTask.filter((task, index) => index !== pos);
-		let _method = "";
-		if (result.length == 0) {
-			deleteUser();
-		} else {
-			_method = "PUT";
-			result = JSON.stringify(result);
-			const response = await fetch(url + _user, {
-				method: _method,
-				body: result,
-				headers: {
-					"Content-Type": "application/json"
-				}
-			});
-			if (response.ok) {
-				const getResponse = await fetch(url + _user);
-				const body = await getResponse.json();
-				setTask(body);
+		let _method = "PUT";
+
+		result = JSON.stringify(result);
+		const response = await fetch(url, {
+			method: _method,
+			body: result,
+			headers: {
+				"Content-Type": "application/json"
 			}
+		});
+		if (response.ok) {
+			const getResponse = await fetch(url);
+			const body = await getResponse.json();
+			setTask(body);
 		}
 	};
 	return (
 		<div className="container">
 			<div className="row d-flex justify-content-center">
-				<h1>
-					{userName == ""
-						? "My ToDo List"
-						: `Welcome ${userName} | My ToDo List`}
-				</h1>
-				{userName == "" ? (
-					""
-				) : (
-					<button className="ml-3 btn-danger" onClick={deleteUser}>
-						Delete User
-					</button>
-				)}
-			</div>
-
-			<div className="row d-flex justify-content-center">
 				<div className="col-6 d-flex justify-content-center">
 					<div className="form-group">
+						<h3>Todo List With React</h3>
 						<input
 							type="text"
-							className="form-control-plaintext"
-							placeholder="write a task here"
+							className="form-control-plaintext input-task"
+							placeholder="Write a task here"
 							value={inputValue}
-							disabled={userName == "" ? "disabled" : ""}
 							onChange={event => {
 								setInputValue(event.target.value);
 							}}
@@ -142,14 +99,8 @@ const Home = () => {
 										alert("Please add some task's");
 										return;
 									}
-									/* setTask(prevTask => [
-										...prevTask,
-										inputValue
-									]); */
+
 									const createTask = async () => {
-										let _user = localStorage.getItem(
-											"userName"
-										);
 										let newTask = [
 											...todoTask,
 											{
@@ -158,20 +109,17 @@ const Home = () => {
 											}
 										];
 
-										const response = await fetch(
-											url + _user,
-											{
-												method: "PUT",
-												body: JSON.stringify(newTask),
-												headers: {
-													"Content-Type":
-														"application/json"
-												}
+										const response = await fetch(url, {
+											method: "PUT",
+											body: JSON.stringify(newTask),
+											headers: {
+												"Content-Type":
+													"application/json"
 											}
-										);
+										});
 										if (response.ok) {
 											const getResponse = await fetch(
-												url + _user
+												url
 											);
 											const body = await getResponse.json();
 											setTask(body);
@@ -205,85 +153,6 @@ const Home = () => {
 					})}
 				</ul>
 			</div>
-			{userName == "" ? (
-				<>
-					<div className="row">
-						<div className="col">
-							<p>
-								Let&apos;s go to create a new user to use this
-								app&apos;s
-							</p>
-							<br />
-							<div className="form-group">
-								<input
-									type="text"
-									className="form-control-plaintext"
-									placeholder="Please write your username here"
-									onKeyPress={event => {
-										if (event.key == "Enter") {
-											if (event.target.value == "") {
-												alert(
-													"Please create a new user, choose a unique Username for you :-)"
-												);
-												return;
-											}
-											let _user = event.target.value;
-											const createUser = async () => {
-												const response = await fetch(
-													url + event.target.value,
-													{
-														method: "POST",
-														headers: {
-															"Content-Type":
-																"application/json"
-														},
-														body: JSON.stringify([])
-													}
-												);
-												if (response.ok) {
-													const getResponse = await fetch(
-														url + _user
-													);
-													const body = await getResponse.json();
-													setTask(body);
-													setUserName(_user);
-													localStorage.setItem(
-														"userName",
-														_user
-													);
-
-													alert(
-														"Done, your new user is " +
-															_user
-													);
-												} else if (
-													response.status == 400
-												) {
-													const body = await response.json();
-													if (
-														body.msg
-															.toString()
-															.includes(
-																"This user already has a list of todos, use PUT instead to update it"
-															)
-													) {
-														alert(
-															"User already exists"
-														);
-													}
-												}
-											};
-											createUser();
-										}
-									}}
-								/>
-							</div>
-						</div>
-					</div>
-				</>
-			) : (
-				""
-			)}
 		</div>
 	);
 };

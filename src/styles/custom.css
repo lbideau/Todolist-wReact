@@ -5,3 +5,15 @@
 li:hover .far {
     display: inline;
 }
+#app{
+    padding-top: 50px;
+    width: 600px;
+    margin: 60px auto;
+    background-color: rgb(226, 226, 226);
+    border-radius: 10px;
+}
+
+.input-task{
+    border-radius: 5px;
+    background-color: rgb(194, 194, 194);
+}
